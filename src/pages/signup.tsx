@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useRouter } from "next/router";
 import * as React from "react";
 import toast from "react-hot-toast";
@@ -5,17 +6,64 @@ import toast from "react-hot-toast";
 export interface ISignUpProps {}
 
 export default function SignUp(props: ISignUpProps) {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+
   const router = useRouter();
-  const onClick = (e: any) => {
-    e.preventDefault();
-    router.push("/");
-    toast.success("Account is created successfully", {
-      style: {
-        borderRadius: "10px",
-        background: "#333",
-        color: "#fff",
-      },
-    });
+  const onClick = async (e: any) => {
+    if (!isLoading && email && password) {
+      e.preventDefault();
+      setIsLoading(true);
+      try {
+        const res = await axios.post("http://localhost:3000/v1/players", {
+          email,
+          password,
+          password_confirmation: password,
+        });
+        console.log(res.data);
+        router.push("/");
+        toast.success("Account is created successfully", {
+          style: {
+            borderRadius: "10px",
+            background: "#333",
+            color: "#fff",
+          },
+        });
+      } catch (e: any) {
+        switch (e.response.status) {
+          case 400:
+            toast.error("Try again later", {
+              style: {
+                borderRadius: "10px",
+                background: "#333",
+                color: "#fff",
+              },
+            });
+            break;
+          case 409:
+            toast.error("Email already exists", {
+              style: {
+                borderRadius: "10px",
+                background: "#333",
+                color: "#fff",
+              },
+            });
+            break;
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  const setEmailValue = (e: any) => {
+    console.log(e.target.value);
+    setEmail(e.target.value);
+  };
+
+  const setPasswordValue = (e: any) => {
+    setPassword(e.target.value);
   };
   return (
     <div className="flex justify-center w-full items-center">
@@ -37,12 +85,14 @@ export default function SignUp(props: ISignUpProps) {
                 placeholder="Email"
                 type="email"
                 name="email"
+                onKeyUp={setEmailValue}
               ></input>
             </div>
             <div className="flex flex-col md:flex-row gap-4 justify-center">
               <input
                 className="py-4 px-6 flex-1 bg-zinc-800 rounded text-zinc-300 outline-none focus:shadow-xl transition-all ease-in-out"
                 placeholder="Password"
+                onKeyUp={setPasswordValue}
                 type="password"
                 name="password"
               ></input>
@@ -54,8 +104,9 @@ export default function SignUp(props: ISignUpProps) {
               ></input>
             </div>
             <button
-              className="w-full bg-purple-600 py-4 mt-10 px-4 rounded-md text-white font-semibold text-lg transition-all ease-out hover:-translate-y-1 hover:shadow-lg"
+              className="w-full bg-purple-600 py-4 mt-10 px-4 rounded-md text-white font-semibold text-lg transition-all ease-out hover:-translate-y-1 hover:shadow-lg disabled:opacity-20"
               onClick={onClick}
+              disabled={isLoading}
             >
               <p>Sign Up</p>
             </button>
